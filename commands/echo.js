@@ -3,18 +3,11 @@ const { SlashCommandBuilder } = require("@discordjs/builders");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("echo")
-    .setDescription("Replies with your input!")
-    .addStringOption((option) =>
-      option
-        .setName("input")
-        .setDescription("The input to echo back")
-        .setRequired(true)
-    ),
+    .setDescription("Replies with your input!"),
   async execute(interaction) {
-    const { options } = interaction;
-    const resourceID = options.getString("input") || "null";
+    console.log(interaction.member.roles.add("785297299004719104"));
     await interaction.reply({
-      content: resourceID,
+      content: "Salut",
       ephemeral: true,
     });
   },

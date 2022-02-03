@@ -43,4 +43,25 @@ const createConversation = async (recipient_ids, title, message) => {
   }
 };
 
-module.exports = { getUserLicense, createConversation };
+const findConversation = async (creatorID, title) => {
+  try {
+    const params = new URLSearchParams({
+      creator_id: creatorID,
+      title: title,
+    });
+    const response = await axios.get(
+      `https://api.mc-market.org/v1/conversations?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Private ${process.env.MC_MARKET_API_KEY}`.trim(),
+        },
+      }
+    );
+    return { response: response };
+  } catch (error) {
+    console.log(`Returned error createConversation`);
+    return { error: error.response };
+  }
+};
+
+module.exports = { getUserLicense, createConversation, findConversation };

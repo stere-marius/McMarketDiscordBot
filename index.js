@@ -8,7 +8,9 @@ const User = require("./models/user.js");
 dotenv.config();
 
 // Create a new client instance
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+const client = new Client({
+  intents: [Intents.FLAGS.GUILDS],
+});
 
 // When the client is ready, run this code (only once)
 client.once("ready", () => {

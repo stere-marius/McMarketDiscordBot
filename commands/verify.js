@@ -45,7 +45,10 @@ module.exports = {
     await connectDatabase();
     await interaction.editReply(`Connected to database successfully!`);
 
-    const userDatabase = await User.findOne({ discord_id: discordID });
+    const userDatabase = await User.findOne({
+      discord_id: discordID,
+      mc_market_user_id: userID,
+    });
 
     if (userDatabase && userHasVerifiedResource(userDatabase, resourceID)) {
       await interaction.editReply(
@@ -64,18 +67,20 @@ module.exports = {
     await interaction.editReply(`Fetching user license...`);
     const { response, error } = await getUserLicense(userID, resourceID);
 
-    if (error && error.response.status == 404) {
+    if (error && error.status == 404) {
       await interaction.editReply(
         `There is no license registered for this user id.`
       );
-      throw error;
+      console.error(`Linia 71 - ${error}`);
+      return;
     }
 
     if (error) {
       await interaction.editReply(
         `There was an error while fetching the license.\nTry again later`
       );
-      throw error;
+      console.error(`Linia 78 - ${error}`);
+      return;
     }
 
     const {
@@ -92,9 +97,7 @@ module.exports = {
     const isLicenseActive = active;
 
     if (!isLicenseActive) {
-      await interaction.editReply(
-        `Could not verify the user ${userID} because the license is expired.`
-      );
+      await interaction.editReply(`Your license for this resource is expired.`);
       return;
     }
 
@@ -103,16 +106,17 @@ module.exports = {
     await interaction.editReply(`generatedUUID = ${generatedUUID}`);
 
     // TODO: Utilizator exista, are resurse verificate, trebuie adaugata o noua resursa
-    const user = new User({
-      mc_market_user_id: userID,
-      discord_id: discordID,
-      resources: [
-        {
-          resourceID: resourceID,
-          verifyCode: generatedUUID,
-          verifyCodeDate: Date.now(),
-        },
-      ],
+    const user =
+      userDatabase ||
+      new User({
+        mc_market_user_id: userID,
+        discord_id: discordID,
+      });
+
+    user.resources.push({
+      resourceID: resourceID,
+      verifyCode: generatedUUID,
+      verifyCodeDate: Date.now(),
     });
 
     const savedUser = await user.save();
@@ -125,13 +129,13 @@ module.exports = {
     );
 
     if (errorConversation) {
-      await interaction.reply(
+      await interaction.editReply(
         `There was en error while sending the message to you. Try again later.`
       );
       return;
     }
 
-    await interaction.reply(
+    await interaction.editReply(
       `A message with a code has been sent to you. Check your McMarket conversations!`
     );
 

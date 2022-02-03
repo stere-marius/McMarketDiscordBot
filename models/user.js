@@ -11,18 +11,20 @@ const user = new Schema(
       type: String,
       required: true,
     },
+    uuid: {
+      type: String,
+    },
+    uuidGenerateDate: {
+      type: Date,
+    },
+    verifiedDate: {
+      type: Date,
+    },
     resources: [
       {
         resourceID: {
           type: String,
           required: true,
-        },
-        verifyCode: {
-          type: String,
-        },
-        verifyCodeDate: {
-          type: Date,
-          default: Date.now(),
         },
         verifiedDate: {
           type: Date,
