@@ -2,6 +2,8 @@
 const { Client, Intents, Collection } = require("discord.js");
 const dotenv = require("dotenv");
 const fs = require("fs");
+const connectDatabase = require("./middleware/mongodbConnector.js");
+const User = require("./models/user.js");
 
 dotenv.config();
 
@@ -10,7 +12,15 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
 // When the client is ready, run this code (only once)
 client.once("ready", () => {
-  console.log("Ready!");
+  const time = new Date();
+  const channel = client.channels.cache.get(`698994886346801221`);
+  channel.send(
+    `I'm ready ${
+      time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds()
+    }`
+  );
+
+  console.log(`I'm ready`);
 });
 
 client.commands = new Collection();
