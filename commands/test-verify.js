@@ -15,7 +15,7 @@ const {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("verify")
+    .setName("test-verify")
     .setDescription("Command used to verify your purchase of a resource!")
     .addNumberOption((option) =>
       option

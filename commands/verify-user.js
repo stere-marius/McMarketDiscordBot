@@ -3,6 +3,10 @@ const connectDatabase = require("../middleware/mongodbConnector.js");
 const User = require("../models/user.js");
 const { v4: uuidv4 } = require("uuid");
 const { getMinutesBetweenDates } = require("../utils/utils.js");
+const {
+  getUserLicense,
+  createConversation,
+} = require("../middleware/mcmApi.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,6 +19,7 @@ module.exports = {
         .setDescription("Your McMarket account id")
     ),
   async execute(interaction) {
+    const { options } = interaction;
     const discordID = interaction.user.id;
     const userID = options.getNumber("user-id");
     const generatedUUID = uuidv4();
@@ -23,7 +28,7 @@ module.exports = {
 
     const userDatabase = await User.findOne({ discord_id: discordID });
 
-    const { verifiedDate, uuidGenerateDate } = userDatabase;
+    const { verifiedDate, uuidGenerateDate } = userDatabase || {};
 
     if (verifiedDate) {
       await interaction.editReply(
@@ -32,15 +37,25 @@ module.exports = {
       return;
     }
 
-    const minutesPassedFromGeneration = getMinutesBetweenDates(
-      uuidGenerateDate,
-      new Date()
-    );
+    const mcmAccountAlreadyVerified = await User.findOne({
+      mc_market_user_id: userID,
+      verifiedDate: { $exists: true },
+    });
 
-    if (uuidGenerateDate && minutesPassedFromGeneration < 10) {
+    if (mcmAccountAlreadyVerified) {
+      await interaction.editReply(
+        "There is already a McMarket account verified for requested id"
+      );
+      return;
+    }
+
+    if (
+      uuidGenerateDate &&
+      getMinutesBetweenDates(new Date(), uuidGenerateDate) < 10
+    ) {
       await interaction.editReply(
         `The UUID has already been genereated! Please generate another one after ${
-          minutesPassedFromGeneration - 10
+          getMinutesBetweenDates(new Date(), uuidGenerateDate) - 10
         } minutes.`
       );
       return;
