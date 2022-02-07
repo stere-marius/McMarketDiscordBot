@@ -1,8 +1,9 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const connectDatabase = require("../middleware/mongodbConnector.js");
 const User = require("../models/user.js");
-const { findConversation, getUserLicense } = require("../middleware/mcmApi.js");
+const { findConversation } = require("../middleware/mcmApi.js");
 const resourcesJSON = require("../resources.json");
+const { verifyUserResources } = require("../middleware/verifierMiddleware.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -65,7 +66,12 @@ module.exports = {
     }
 
     addVerifiedRank(interaction);
-    await verifyUserResources(userDatabase, userID, interaction);
+    await verifyUserResources(
+      resourcesJSON.resources,
+      userDatabase,
+      userID,
+      interaction
+    );
 
     userDatabase.verifiedDate = new Date();
 
@@ -81,49 +87,4 @@ const addVerifiedRank = (interaction) => {
   if (!process.env.VERIFIED_USER_ROLE_ID) return;
 
   interaction.member.roles.add(process.env.VERIFIED_USER_ROLE_ID);
-};
-
-const verifyUserResources = async (userDatatabse, userID, interaction) => {
-  for (const resource of resourcesJSON.resources) {
-    const { error, success } = await verifyResource(resource, userID);
-    await interaction.followUp({ content: success || error, ephemeral: true });
-
-    if (!success) continue;
-
-    if (resource.role_id) {
-      interaction.member.roles.add(resource.role_id);
-    }
-
-    userDatatabse.resources.push({
-      resourceID: resource.id,
-      verifiedDate: new Date(),
-    });
-  }
-};
-
-const verifyResource = async (resource, userID) => {
-  const { response, error } = await getUserLicense(userID, resource.id);
-
-  if (error && error.status === 404) {
-    return { error: `Could not find a license for resource ${resource.name}` };
-  }
-
-  if (error) {
-    console.error(error);
-    return {
-      error: `There has been an error while verifying the resource ${resource.name}`,
-    };
-  }
-
-  const {
-    data: { active: isLicenseActive },
-  } = response.data;
-
-  if (!isLicenseActive) {
-    return { error: `Your license for this resource is expired.` };
-  }
-
-  return {
-    success: `You have been verified for the resource ${resource.name}`,
-  };
 };

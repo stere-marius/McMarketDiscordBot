@@ -57,4 +57,36 @@ const findConversation = async (creatorID, title) => {
   }
 };
 
-module.exports = { getUserLicense, createConversation, findConversation };
+const verifyResourceLicense = async (resourceID, resourceName, userID) => {
+  const { response, error } = await getUserLicense(userID, resourceID);
+
+  if (error && error.status === 404) {
+    return { error: `Could not find a license for resource ${resourceName}` };
+  }
+
+  if (error) {
+    console.error(error);
+    return {
+      error: `There has been an error while verifying the resource ${resourceName}`,
+    };
+  }
+
+  const {
+    data: { active: isLicenseActive },
+  } = response.data;
+
+  if (!isLicenseActive) {
+    return { error: `Your license for this resource is expired.` };
+  }
+
+  return {
+    success: `You have been verified for the resource ${resourceName}`,
+  };
+};
+
+module.exports = {
+  getUserLicense,
+  createConversation,
+  findConversation,
+  verifyResourceLicense,
+};
