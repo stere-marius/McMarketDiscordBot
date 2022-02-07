@@ -3,10 +3,6 @@ const connectDatabase = require("../middleware/mongodbConnector.js");
 const User = require("../models/user.js");
 const { v4: uuidv4 } = require("uuid");
 const { getMinutesBetweenDates } = require("../utils/utils.js");
-const {
-  getUserLicense,
-  createConversation,
-} = require("../middleware/mcmApi.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -23,7 +19,12 @@ module.exports = {
     const discordID = interaction.user.id;
     const userID = options.getNumber("user-id");
     const generatedUUID = uuidv4();
-    await interaction.reply(`Generating the uuid...`);
+
+    await interaction.reply({
+      content: `Fetching data...`,
+      ephemeral: true,
+    });
+
     await connectDatabase();
 
     const userDatabase = await User.findOne({ discord_id: discordID });
@@ -31,9 +32,10 @@ module.exports = {
     const { verifiedDate, uuidGenerateDate } = userDatabase || {};
 
     if (verifiedDate) {
-      await interaction.editReply(
-        `There is already an account verified with this discord address.`
-      );
+      await interaction.followUp({
+        content: `There is already an account verified with this discord address.`,
+        ephemeral: true,
+      });
       return;
     }
 
@@ -43,21 +45,24 @@ module.exports = {
     });
 
     if (mcmAccountAlreadyVerified) {
-      await interaction.editReply(
-        "There is already a McMarket account verified for requested id"
-      );
+      await interaction.followUp({
+        content:
+          "There is already a McMarket account verified for requested id",
+        ephemeral: true,
+      });
       return;
     }
 
     if (
       uuidGenerateDate &&
-      getMinutesBetweenDates(new Date(), uuidGenerateDate) < 10
+      getMinutesBetweenDates(uuidGenerateDate, new Date()) < 10
     ) {
-      await interaction.editReply(
-        `The UUID has already been genereated! Please generate another one after ${
-          getMinutesBetweenDates(new Date(), uuidGenerateDate) - 10
-        } minutes.`
-      );
+      await interaction.followUp({
+        content: `The code has already been genereated! Please generate another one after ${Math.floor(
+          10 - getMinutesBetweenDates(uuidGenerateDate, new Date())
+        )} minutes.`,
+        ephemeral: true,
+      });
       return;
     }
 
@@ -68,16 +73,18 @@ module.exports = {
         discord_id: discordID,
       });
 
-    await interaction.editReply(`Generating a new UUID...`);
+    await interaction.followUp({
+      content: `Generating a new code...`,
+      ephemeral: true,
+    });
+
+    user.mc_market_user_id = userID;
     user.uuid = generatedUUID;
     user.uuidGenerateDate = new Date();
 
     await user.save();
-    await interaction.editReply({
-      content: `
-      1. Create a conversation with TripleZone with the title ${generatedUUID}\n
-      2. After creating the conversation user the command /verify-code yourCode
-      `,
+    await interaction.followUp({
+      content: `1. Create a conversation with ${process.env.MC_MARKET_USERNAME} with the title ${generatedUUID}\n2. After creating the conversation use the command /verify-code`,
       ephemeral: true,
     });
   },
