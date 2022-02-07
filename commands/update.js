@@ -3,6 +3,14 @@ const connectDatabase = require("../middleware/mongodbConnector.js");
 const User = require("../models/user.js");
 const resourcesJSON = require("../resources.json");
 const { verifyUserResources } = require("../middleware/verifierMiddleware.js");
+const { MessageEmbed } = require('discord.js');
+
+const errorEmbed = new MessageEmbed()
+  .setColor('#BD3838')
+  .setTitle('You are not verified')
+  .setDescription('Use the command **/verify-user** to verify yourself.')
+  .setTimestamp()
+  .setFooter({ text: 'TripleBot', iconURL: 'https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png' });
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -14,11 +22,11 @@ module.exports = {
     await connectDatabase();
     const userDatabase = await User.findOne({ discord_id: discordID });
 
-    await interaction.reply({ content: "Fetching data...", ephemeral: true });
+    await interaction.reply({ content: "Loading...", ephemeral: true });
 
     if (!userDatabase || !userDatabase.verifiedDate) {
-      await interaction.followUp({
-        content: `You are not verified.\nUse the command /verify-user to verify.`,
+      await interaction.editReply({
+        embeds: [errorEmbed],
         ephemeral: true,
       });
       return;

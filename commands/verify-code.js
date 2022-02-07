@@ -4,6 +4,48 @@ const User = require("../models/user.js");
 const { findConversation } = require("../middleware/mcmApi.js");
 const resourcesJSON = require("../resources.json");
 const { verifyUserResources } = require("../middleware/verifierMiddleware.js");
+const { MessageEmbed } = require('discord.js');
+
+const userNotFoundEmbed = new MessageEmbed()
+  .setColor('#BD3838')
+  .setTitle('User not found')
+  .setDescription(`There is no data associated with this discord address. Please use the command **/verify-user** first.`)
+  .setTimestamp()
+  .setFooter({ text: 'TripleBot', iconURL: 'https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png' });
+
+const userAlreadyTaken = new MessageEmbed()
+  .setColor('#BD3838')
+  .setTitle('User already taken')
+  .setDescription(`There is already a McMarket account verified for requested id`)
+  .setTimestamp()
+  .setFooter({ text: 'TripleBot', iconURL: 'https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png' });
+
+const successfullyVerified = new MessageEmbed()
+  .setColor('#5CB45A')
+  .setTitle('Success!')
+  .setDescription(`You have been successfully verified!`)
+  .setTimestamp()
+  .setFooter({ text: 'TripleBot', iconURL: 'https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png' });
+
+const verificationCodeNotFound = new MessageEmbed()
+  .setColor('#BD3838')
+  .setTitle('Error!')
+  .setDescription(
+    `
+  Could not find a conversation with the generated code.\n
+  Please start a conversation with TripleZone with the title being your generated code.\n
+  If you already created an conversation, please try running this command later
+  `)
+  .setTimestamp()
+  .setFooter({ text: 'TripleBot', iconURL: 'https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png' });
+
+const tryLater = new MessageEmbed()
+  .setColor('#BD3838')
+  .setTitle('Try again later')
+  .setDescription(`There was an error on our side.`)
+  .setTimestamp()
+  .setFooter({ text: 'TripleBot', iconURL: 'https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png' });
+
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,14 +57,13 @@ module.exports = {
     const userDatabase = await User.findOne({ discord_id: discordID });
 
     await interaction.reply({
-      content: "Fetching information...",
+      content: "Loading...",
       ephemeral: true,
     });
 
     if (!userDatabase) {
-      await interaction.followUp({
-        content:
-          "There is no data associated with this discord address. Please use the command /verify-user first.",
+      await interaction.editReply({
+        embeds: [userNotFoundEmbed],
         ephemeral: true,
       });
       return;
@@ -34,9 +75,8 @@ module.exports = {
     });
 
     if (mcmAccountAlreadyVerified) {
-      await interaction.followUp({
-        content:
-          "There is already a McMarket account verified for requested id",
+      await interaction.editReply({
+        embeds: [userAlreadyTaken],
         ephemeral: true,
       });
       return;
@@ -46,20 +86,16 @@ module.exports = {
     const { error } = await findConversation(userID, uuid);
 
     if (error && error.status === 404) {
-      await interaction.followUp({
-        content: `
-        Could not find a conversation with the generated code.\n
-        Please start a conversation with TripleZone with the title being your generated code.\n
-        If you already created an conversation, please try running this command later
-        `,
+      await interaction.editReply({
+        embeds: [verificationCodeNotFound],
         ephemeral: true,
       });
       return;
     }
 
     if (error) {
-      await interaction.followUp({
-        content: `There was an error on our side.\nTry again later.`,
+      await interaction.editReply({
+        embeds: [tryLater],
         ephemeral: true,
       });
       return;
@@ -76,8 +112,8 @@ module.exports = {
     userDatabase.verifiedDate = new Date();
 
     await userDatabase.save();
-    await interaction.followUp({
-      content: `You have been successfully verified!`,
+    await interaction.editReply({
+      embeds: [successfullyVerified],
       ephemeral: true,
     });
   },

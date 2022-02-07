@@ -3,4 +3,5 @@ function getMinutesBetweenDates(startDate, endDate) {
   return diff / 60000;
 }
 
+
 module.exports = { getMinutesBetweenDates };
