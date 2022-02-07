@@ -4,9 +4,7 @@
   "description": "Discord bot for verifying user purchase for specific resource",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint . --ext .js",
-    "lint:fix": "npm run lint -- --fix"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
