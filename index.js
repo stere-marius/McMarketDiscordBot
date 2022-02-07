@@ -1,11 +1,11 @@
-// Require the necessary discord.js classes
 const { Client, Intents, Collection } = require("discord.js");
 const dotenv = require("dotenv");
 const fs = require("fs");
-const connectDatabase = require("./middleware/mongodbConnector.js");
-const User = require("./models/user.js");
+const { registerCommands } = require("./deploy-commands.js");
 
 dotenv.config();
+
+registerCommands();
 
 // Create a new client instance
 const client = new Client({
@@ -15,14 +15,12 @@ const client = new Client({
 // When the client is ready, run this code (only once)
 client.once("ready", () => {
   const time = new Date();
-  const channel = client.channels.cache.get(`698994886346801221`);
-  channel.send(
+
+  console.log(
     `I'm ready ${
       time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds()
     }`
   );
-
-  console.log(`I'm ready`);
 });
 
 client.commands = new Collection();
