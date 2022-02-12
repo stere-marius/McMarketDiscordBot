@@ -3,37 +3,12 @@ const connectDatabase = require("../middleware/mongodbConnector.js");
 const User = require("../models/user.js");
 const { v4: uuidv4 } = require("uuid");
 const { getMinutesBetweenDates } = require("../utils/utils.js");
-const { MessageActionRow, MessageButton, MessageEmbed } = require("discord.js");
+const { createEmbedded } = require("../middleware/embeddedUtils")
+const { MessageActionRow, MessageButton } = require("discord.js");
 const {
   createConversation,
   getUserIdFromUsername,
 } = require("../middleware/mcmApi.js");
-
-const userAlreadyVerified = new MessageEmbed()
-  .setColor("#BD3838")
-  .setTitle("User already verified")
-  .setDescription(
-    `There is already an account verified with this discord address`
-  )
-  .setTimestamp()
-  .setFooter({
-    text: "TripleBot",
-    iconURL:
-      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
-  });
-
-const userAlreadyTaken = new MessageEmbed()
-  .setColor("#BD3838")
-  .setTitle("User already taken")
-  .setDescription(
-    `There is already a McMarket account verified for requested id`
-  )
-  .setTimestamp()
-  .setFooter({
-    text: "TripleBot",
-    iconURL:
-      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
-  });
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -61,14 +36,22 @@ module.exports = {
 
     if (errorFetchingUserID && errorFetchingUserID.status == 404) {
       await interaction.followUp({
-        content: `Could not find the username ${userName}`,
+        embeds: [createEmbedded(
+          "User not found",
+          `Could not find the username ${userName}`,
+          "#BD3838")],
+        ephemeral: true,
       });
       return;
     }
 
     if (errorFetchingUserID) {
       await interaction.followUp({
-        content: `There has been an error while fetching the username.`,
+        embeds: [createEmbedded(
+          "Error...",
+          `There has been an error while fetching the username.`,
+          "#BD3838")],
+        ephemeral: true,
       });
       return;
     }
@@ -85,7 +68,10 @@ module.exports = {
 
     if (verifiedDate) {
       await interaction.editReply({
-        embeds: [userAlreadyVerified],
+        embeds: [createEmbedded(
+          "User already verified",
+          `There is already an account verified with this discord address`,
+          "#BD3838")],
         ephemeral: true,
       });
       return;
@@ -98,7 +84,10 @@ module.exports = {
 
     if (mcmAccountAlreadyVerified) {
       await interaction.editReply({
-        embeds: [userAlreadyTaken],
+        embeds: [createEmbedded(
+          "User already taken",
+          `There is already a McMarket account verified for requested id`,
+          "#BD3838")],
         ephemeral: true,
       });
       return;
@@ -108,24 +97,15 @@ module.exports = {
       uuidGenerateDate &&
       getMinutesBetweenDates(uuidGenerateDate, new Date()) < 10
     ) {
-      const waitForAnotherCode = new MessageEmbed()
-        .setColor("#BD3838")
-        .setTitle("Cooldown")
-        .setDescription(
+
+      await interaction.editReply({
+        embeds: [createEmbedded(
+          "Cooldown",
           `The code has already been genereated! Please generate another one after 
           ${Math.floor(
             10 - getMinutesBetweenDates(uuidGenerateDate, new Date())
-          )} minutes.`
-        )
-        .setTimestamp()
-        .setFooter({
-          text: "TripleBot",
-          iconURL:
-            "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
-        });
-
-      await interaction.editReply({
-        embeds: [waitForAnotherCode],
+          )} minutes.`,
+          "#BD3838")],
         ephemeral: true,
       });
       return;
@@ -166,8 +146,23 @@ module.exports = {
     user.uuid = generatedUUID;
     user.uuidGenerateDate = new Date();
     await user.save();
-    await interaction.followUp(
-      `There has been generated a code in a conversation with ${process.env.MC_MARKET_USERNAME}. Please reply with that code.`
-    );
+
+    const createConversationButton = new MessageActionRow()
+      .addComponents(
+        new MessageButton()
+          .setURL(`https://www.mc-market.org/conversations/${user.conversation_id}/`)
+          .setLabel('See the conversation')
+          .setStyle('LINK')
+      );
+
+    await interaction.followUp({
+      embeds: [createEmbedded(
+        "Check your MCMarket conversations",
+        `A code has been generated in a conversation with **${process.env.MC_MARKET_USERNAME}**.\n Please reply on mcmarket with that code. \n
+        Then execute the **/verify-user** command.`,
+        "#47f066")],
+      components: [createConversationButton],
+      ephemeral: true
+    });
   },
 };

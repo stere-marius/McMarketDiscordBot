@@ -1,24 +1,19 @@
 {
     "resources" : [
         {
-            "name": "CryptoExchanger",
-            "id": "21895",
-            "role_id": "938850490345742336"
-        },
-        {
             "name": "Deluxe Tebex/Buycraft Theme",
             "id": "17374",
-            "role_id": "938849998219649174"
+            "role_id": "940317549105672282"
         },
         {
             "name": "Deluxe Ghost Theme",
             "id": "18555",
-            "role_id": "938850418061115463"
+            "role_id": "940317673970073600"
         },
         {
             "name": "Premium Buycraft Theme",
             "id": "12784",
-            "role_id": "938850490345742336"
+            "role_id": "940317728751898644"
         }
     ]
 }
