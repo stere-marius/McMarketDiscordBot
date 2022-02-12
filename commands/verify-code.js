@@ -1,51 +1,75 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const connectDatabase = require("../middleware/mongodbConnector.js");
 const User = require("../models/user.js");
-const { findConversation } = require("../middleware/mcmApi.js");
+const { findUuidInConversationReplies } = require("../middleware/mcmApi.js");
 const resourcesJSON = require("../resources.json");
 const { verifyUserResources } = require("../middleware/verifierMiddleware.js");
-const { MessageEmbed } = require('discord.js');
+const { MessageEmbed } = require("discord.js");
 
 const userNotFoundEmbed = new MessageEmbed()
-  .setColor('#BD3838')
-  .setTitle('User not found')
-  .setDescription(`There is no data associated with this discord address. Please use the command **/verify-user** first.`)
+  .setColor("#BD3838")
+  .setTitle("User not found")
+  .setDescription(
+    `There is no data associated with this discord address. Please use the command **/verify-user** first.`
+  )
   .setTimestamp()
-  .setFooter({ text: 'TripleBot', iconURL: 'https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png' });
+  .setFooter({
+    text: "TripleBot",
+    iconURL:
+      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
+  });
 
 const userAlreadyTaken = new MessageEmbed()
-  .setColor('#BD3838')
-  .setTitle('User already taken')
-  .setDescription(`There is already a McMarket account verified for requested id`)
+  .setColor("#BD3838")
+  .setTitle("User already taken")
+  .setDescription(
+    `There is already a McMarket account verified for requested id`
+  )
   .setTimestamp()
-  .setFooter({ text: 'TripleBot', iconURL: 'https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png' });
+  .setFooter({
+    text: "TripleBot",
+    iconURL:
+      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
+  });
 
 const successfullyVerified = new MessageEmbed()
-  .setColor('#5CB45A')
-  .setTitle('Success!')
+  .setColor("#5CB45A")
+  .setTitle("Success!")
   .setDescription(`You have been successfully verified!`)
   .setTimestamp()
-  .setFooter({ text: 'TripleBot', iconURL: 'https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png' });
+  .setFooter({
+    text: "TripleBot",
+    iconURL:
+      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
+  });
 
 const verificationCodeNotFound = new MessageEmbed()
-  .setColor('#BD3838')
-  .setTitle('Error!')
+  .setColor("#BD3838")
+  .setTitle("Error!")
   .setDescription(
     `
   Could not find a conversation with the generated code.\n
   Please start a conversation with TripleZone with the title being your generated code.\n
   If you already created an conversation, please try running this command later
-  `)
+  `
+  )
   .setTimestamp()
-  .setFooter({ text: 'TripleBot', iconURL: 'https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png' });
+  .setFooter({
+    text: "TripleBot",
+    iconURL:
+      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
+  });
 
 const tryLater = new MessageEmbed()
-  .setColor('#BD3838')
-  .setTitle('Try again later')
+  .setColor("#BD3838")
+  .setTitle("Try again later")
   .setDescription(`There was an error on our side.`)
   .setTimestamp()
-  .setFooter({ text: 'TripleBot', iconURL: 'https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png' });
-
+  .setFooter({
+    text: "TripleBot",
+    iconURL:
+      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
+  });
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -62,7 +86,7 @@ module.exports = {
     });
 
     if (!userDatabase) {
-      await interaction.editReply({
+      await interaction.followUp({
         embeds: [userNotFoundEmbed],
         ephemeral: true,
       });
@@ -75,18 +99,22 @@ module.exports = {
     });
 
     if (mcmAccountAlreadyVerified) {
-      await interaction.editReply({
+      await interaction.followUp({
         embeds: [userAlreadyTaken],
         ephemeral: true,
       });
       return;
     }
 
-    const { mc_market_user_id: userID, uuid } = userDatabase;
-    const { error } = await findConversation(userID, uuid);
+    const { mc_market_user_id: userID, conversation_id, uuid } = userDatabase;
+    const { success, error } = await findUuidInConversationReplies(
+      conversation_id,
+      userID,
+      uuid
+    );
 
-    if (error && error.status === 404) {
-      await interaction.editReply({
+    if (error && [404, 403].includes(error.status)) {
+      await interaction.followUp({
         embeds: [verificationCodeNotFound],
         ephemeral: true,
       });
@@ -94,10 +122,16 @@ module.exports = {
     }
 
     if (error) {
-      await interaction.editReply({
+      await interaction.followUp({
         embeds: [tryLater],
         ephemeral: true,
       });
+      return;
+    }
+
+    if (!success) {
+      await interaction.followUp("The code could not be found in conversation");
+      // TODO: Send message that the code could not be found in conversation
       return;
     }
 
@@ -112,7 +146,7 @@ module.exports = {
     userDatabase.verifiedDate = new Date();
 
     await userDatabase.save();
-    await interaction.editReply({
+    await interaction.followUp({
       embeds: [successfullyVerified],
       ephemeral: true,
     });

@@ -37,11 +37,10 @@ const createConversation = async (recipient_ids, title, message) => {
   }
 };
 
-const findConversation = async (creatorID, title) => {
+const findConversations = async (page) => {
   try {
     const params = new URLSearchParams({
-      creator_id: creatorID,
-      title: title,
+      page,
     });
     const response = await axios.get(
       `https://api.mc-market.org/v1/conversations?${params.toString()}`,
@@ -84,9 +83,74 @@ const verifyResourceLicense = async (resourceID, resourceName, userID) => {
   };
 };
 
+const getThreadReplies = async (page) => {
+  try {
+    const params = new URLSearchParams({
+      page,
+    });
+    const response = await axios.get(
+      `https://api.mc-market.org/v1/threads/${
+        process.env.VERIFY_THREAD_ID
+      }/replies?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Private ${process.env.MC_MARKET_API_KEY}`.trim(),
+        },
+      }
+    );
+    return { response };
+  } catch (error) {
+    return { error: error.response };
+  }
+};
+
+const findUuidInConversationReplies = async (
+  conversationID,
+  authorID,
+  uuid
+) => {
+  try {
+    const { data } = await axios.get(
+      `https://api.mc-market.org/v1/conversations/${conversationID}/replies`,
+      {
+        headers: {
+          Authorization: `Private ${process.env.MC_MARKET_API_KEY}`.trim(),
+        },
+      }
+    );
+
+    let success = data.data.find(
+      (r) => r.message.includes(uuid) && r.author_id == authorID
+    );
+
+    return { success };
+  } catch (error) {
+    return { error: error.response };
+  }
+};
+
+const getUserIdFromUsername = async (username) => {
+  try {
+    const { data } = await axios.get(
+      `https://api.mc-market.org/v1/members/usernames/${username}`,
+      {
+        headers: {
+          Authorization: `Private ${process.env.MC_MARKET_API_KEY}`.trim(),
+        },
+      }
+    );
+
+    return { userID: data.data.member_id };
+  } catch (error) {
+    return { error: error.response };
+  }
+};
+
 module.exports = {
   getUserLicense,
   createConversation,
-  findConversation,
+  findConversations,
   verifyResourceLicense,
+  findUuidInConversationReplies,
+  getUserIdFromUsername,
 };

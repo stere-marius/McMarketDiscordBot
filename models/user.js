@@ -11,6 +11,9 @@ const user = new Schema(
       type: String,
       required: true,
     },
+    conversation_id: {
+      type: String,
+    },
     uuid: {
       type: String,
     },
