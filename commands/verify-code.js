@@ -4,72 +4,7 @@ const User = require("../models/user.js");
 const { findUuidInConversationReplies } = require("../middleware/mcmApi.js");
 const resourcesJSON = require("../resources.json");
 const { verifyUserResources } = require("../middleware/verifierMiddleware.js");
-const { MessageEmbed } = require("discord.js");
-
-const userNotFoundEmbed = new MessageEmbed()
-  .setColor("#BD3838")
-  .setTitle("User not found")
-  .setDescription(
-    `There is no data associated with this discord address. Please use the command **/verify-user** first.`
-  )
-  .setTimestamp()
-  .setFooter({
-    text: "TripleBot",
-    iconURL:
-      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
-  });
-
-const userAlreadyTaken = new MessageEmbed()
-  .setColor("#BD3838")
-  .setTitle("User already taken")
-  .setDescription(
-    `There is already a McMarket account verified for requested id`
-  )
-  .setTimestamp()
-  .setFooter({
-    text: "TripleBot",
-    iconURL:
-      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
-  });
-
-const successfullyVerified = new MessageEmbed()
-  .setColor("#5CB45A")
-  .setTitle("Success!")
-  .setDescription(`You have been successfully verified!`)
-  .setTimestamp()
-  .setFooter({
-    text: "TripleBot",
-    iconURL:
-      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
-  });
-
-const verificationCodeNotFound = new MessageEmbed()
-  .setColor("#BD3838")
-  .setTitle("Error!")
-  .setDescription(
-    `
-  Could not find a conversation with the generated code.\n
-  Please start a conversation with TripleZone with the title being your generated code.\n
-  If you already created an conversation, please try running this command later
-  `
-  )
-  .setTimestamp()
-  .setFooter({
-    text: "TripleBot",
-    iconURL:
-      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
-  });
-
-const tryLater = new MessageEmbed()
-  .setColor("#BD3838")
-  .setTitle("Try again later")
-  .setDescription(`There was an error on our side.`)
-  .setTimestamp()
-  .setFooter({
-    text: "TripleBot",
-    iconURL:
-      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
-  });
+const { createEmbedded } = require("../middleware/embeddedUtils")
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -87,8 +22,11 @@ module.exports = {
 
     if (!userDatabase) {
       await interaction.followUp({
-        embeds: [userNotFoundEmbed],
         ephemeral: true,
+        embeds: [createEmbedded(
+          "You are not verified",
+          "There is no data associated with this discord address. Please use the command **/verify-user** first",
+          "#BD3838")],
       });
       return;
     }
@@ -100,8 +38,11 @@ module.exports = {
 
     if (mcmAccountAlreadyVerified) {
       await interaction.followUp({
-        embeds: [userAlreadyTaken],
         ephemeral: true,
+        embeds: [createEmbedded(
+          "User already taken",
+          "There is already a McMarket account verified for requested id",
+          "#BD3838")],
       });
       return;
     }
@@ -115,23 +56,37 @@ module.exports = {
 
     if (error && [404, 403].includes(error.status)) {
       await interaction.followUp({
-        embeds: [verificationCodeNotFound],
         ephemeral: true,
+        embeds: [createEmbedded(
+          "Verification Code Not Found!",
+          `
+          Could not find a conversation with the generated code.\n
+          If you already created an conversation, please try running this command later
+          `,
+          "#BD3838")],
       });
       return;
     }
 
     if (error) {
       await interaction.followUp({
-        embeds: [tryLater],
         ephemeral: true,
+        embeds: [createEmbedded(
+          "Try again later",
+          `There was an error on our side.`,
+          "#BD3838")],
       });
       return;
     }
 
     if (!success) {
-      await interaction.followUp("The code could not be found in conversation");
-      // TODO: Send message that the code could not be found in conversation
+      await interaction.followUp({
+        ephemeral: true,
+        embeds: [createEmbedded(
+          "Code couldn't be found..",
+          "The code could not be found in conversation",
+          "#BD3838")],
+      });
       return;
     }
 
@@ -147,8 +102,11 @@ module.exports = {
 
     await userDatabase.save();
     await interaction.followUp({
-      embeds: [successfullyVerified],
-      ephemeral: true,
+      embeds: [createEmbedded(
+        "Success!",
+        `You have been successfully verified!`,
+        "#47f066")],
+      ephemeral: true
     });
   },
 };

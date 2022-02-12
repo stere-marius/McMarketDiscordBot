@@ -1,6 +1,9 @@
-const createEmbedded = (title, description) => {
+
+const { MessageEmbed } = require("discord.js");
+
+const createEmbedded = (title, description, color) => {
   const embed = new MessageEmbed()
-    .setColor("#BD3838")
+    .setColor(color)
     .setTitle(title)
     .setDescription(description)
     .setTimestamp()
@@ -12,3 +15,5 @@ const createEmbedded = (title, description) => {
 
   return embed;
 };
+
+module.exports = { createEmbedded };

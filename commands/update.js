@@ -3,19 +3,7 @@ const connectDatabase = require("../middleware/mongodbConnector.js");
 const User = require("../models/user.js");
 const resourcesJSON = require("../resources.json");
 const { verifyUserResources } = require("../middleware/verifierMiddleware.js");
-const { findUuidInConversationReplies } = require("../middleware/mcmApi.js");
-const { MessageEmbed } = require("discord.js");
-
-const errorEmbed = new MessageEmbed()
-  .setColor("#BD3838")
-  .setTitle("You are not verified")
-  .setDescription("Use the command **/verify-user** to verify yourself.")
-  .setTimestamp()
-  .setFooter({
-    text: "TripleBot",
-    iconURL:
-      "https://cdn.discordapp.com/attachments/939911214857871420/940298810649899048/TrippleZone_pfp_bgless.png",
-  });
+const { createEmbedded } = require("../middleware/embeddedUtils");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -28,8 +16,14 @@ module.exports = {
     await interaction.reply({ content: "Loading...", ephemeral: true });
     if (!userDatabase || !userDatabase.verifiedDate) {
       await interaction.editReply({
-        embeds: [errorEmbed],
         ephemeral: true,
+        embeds: [
+          createEmbedded(
+            "You are not verified",
+            "Use the command **/verify-user** to verify yourself.",
+            "#BD3838"
+          ),
+        ],
       });
       return;
     }
@@ -45,7 +39,15 @@ module.exports = {
       userID,
       interaction
     );
+
     addVerifiedRank(interaction);
+
+    await interaction.followUp({
+      embeds: [
+        createEmbedded("Success!", `Your account has been updated.`, "#47f066"),
+      ],
+      ephemeral: true,
+    });
   },
 };
 
