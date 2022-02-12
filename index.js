@@ -3,13 +3,19 @@ const dotenv = require("dotenv");
 const fs = require("fs");
 const { registerCommands } = require("./deploy-commands.js");
 
+const { run } = require("./events/guildMemberRemove.js");
+
 dotenv.config();
 
 registerCommands();
 
 // Create a new client instance
 const client = new Client({
-  intents: [Intents.FLAGS.GUILDS],
+  intents: [
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MEMBERS,
+    Intents.FLAGS.GUILD_PRESENCES,
+  ],
 });
 
 // When the client is ready, run this code (only once)
@@ -35,6 +41,10 @@ for (const file of commandFiles) {
   // With the key as the command name and the value as the exported module
   client.commands.set(command.data.name, command);
 }
+
+client.on("guildMemberRemove", async (member) => {
+  await run(client, member);
+});
 
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isCommand()) {

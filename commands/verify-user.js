@@ -150,7 +150,6 @@ module.exports = {
     );
 
     if (error) {
-      throw error;
       await interaction.followUp(
         "There was an error while creating the conversation. Try again later"
       );

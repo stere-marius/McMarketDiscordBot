@@ -45,5 +45,12 @@ module.exports = {
       userID,
       interaction
     );
+    addVerifiedRank(interaction);
   },
+};
+
+const addVerifiedRank = (interaction) => {
+  if (!process.env.VERIFIED_USER_ROLE_ID) return;
+
+  interaction.member.roles.add(process.env.VERIFIED_USER_ROLE_ID);
 };
